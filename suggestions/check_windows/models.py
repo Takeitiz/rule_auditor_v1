@@ -1,7 +1,9 @@
+"""
+Models for check windows suggestions.
+"""
 from typing import Optional
 from pydantic import Field
 from datnguyen.rule_auditor.suggestions.base import BaseSuggestion
-
 
 class CheckWindowsResult(BaseSuggestion):
     """Result from check windows suggestion algorithm"""
@@ -11,6 +13,7 @@ class CheckWindowsResult(BaseSuggestion):
     end_time: Optional[int] = Field(None, description="End time in seconds from midnight")
     weekdays: Optional[str] = Field(None, description="Comma-separated list of weekdays")
     holiday_calendar: Optional[str] = Field(None, description="Holiday calendar name")
+    day_offset: Optional[int] = Field(None, description="Holiday offset")
 
     def __str__(self) -> str:
         parts = [f"timezone={self.timezone}"]
@@ -22,6 +25,7 @@ class CheckWindowsResult(BaseSuggestion):
             parts.append(f"weekdays={self.weekdays}")
 
         parts.append(f"holidays={self.holiday_calendar}")
+
         parts.append(f"method={self.method_used}")
 
         return f"CheckWindowsResult({', '.join(parts)})"
@@ -85,5 +89,6 @@ class CheckWindowsResult(BaseSuggestion):
             if self.holiday_calendar in ("weekday", "all_day"):
                 self.holiday_calendar = None
             if self.holiday_calendar:
-                window_config = HolidayWindow(holiday_calendar=self.holiday_calendar)
+                window_config = HolidayWindow(holiday_calendar=self.holiday_calendar, day_offset=self.day_offset)
                 rule.window_exclude.append(window_config)
+

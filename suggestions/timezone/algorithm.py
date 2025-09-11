@@ -33,18 +33,35 @@ class TimezoneSuggestionAlgorithm(BaseAlgorithm):
 
     @requires_metrics('count_weekday_distribution', 'count_date_label_lag_distribution', 'count_30_min_distribution')
     def suggest(self, statistics: StatisticsResult) -> Optional[TimezoneResult]:
-        """Generate timezone suggestion using multiple strategies"""
+        """Generate timezone suggestion with cache region strategy priority"""
         # User-defined strategy is handled separately and takes precedence
-        user_strategy = UserDefinedStrategy(self.timezone)
-        user_result = user_strategy.suggest(statistics)
-        if user_result and user_result.timezone:
-            return user_result
+        # user_strategy = UserDefinedStrategy(self.timezone)
+        # user_result = user_strategy.suggest(statistics)
+        # if user_result and user_result.timezone:
+        #     return user_result
 
+        # Separate cache region strategy from others for priority handling
+        cache_region_strategy = None
+        other_strategies = []
+
+        for strategy in self.strategies:
+            if strategy.__class__.__name__ == 'CacheRegionStrategy':
+                cache_region_strategy = strategy
+            else:
+                other_strategies.append(strategy)
+
+        # Execute cache region strategy first with absolute priority
+        if cache_region_strategy:
+            cache_result = cache_region_strategy.suggest(statistics)
+            if cache_result and cache_result.timezone:
+                return cache_result  # Early return - cache region takes precedence
+
+        # Fallback to other strategies only if cache region fails or returns no result
         priority_order = {'T': 1, 'B': 2, 'C': 3, 'b': 4, 'c': 5}
         combined_result = None
 
-        # Sort strategies for deterministic execution if needed, e.g., by class name
-        sorted_strategies = sorted(self.strategies, key=lambda s: s.__class__.__name__)
+        # Sort remaining strategies for deterministic execution
+        sorted_strategies = sorted(other_strategies, key=lambda s: s.__class__.__name__)
 
         for strategy in sorted_strategies:
             result = strategy.suggest(statistics)
@@ -57,3 +74,4 @@ class TimezoneSuggestionAlgorithm(BaseAlgorithm):
                     combined_result = result
 
         return combined_result
+

@@ -1,7 +1,6 @@
 """
 Cache region-based timezone strategy.
 """
-
 from typing import Optional
 from datnguyen.rule_auditor.const import REGION_TIMEZONE_MAP
 from datnguyen.rule_auditor.suggestions.base import requires_metrics
@@ -52,7 +51,11 @@ class CacheRegionStrategy(TimezoneStrategy):
             return TimezoneResult(timezone=None)
 
         # Get timezone with highest score
-        best_tz = max(timezone_scores.items(), key=lambda x: x[1])[0]
-        result = TimezoneResult(timezone=best_tz)
-        result.method_used = "cache_region"
-        return result
+        best_tz, best_score = max(timezone_scores.items(), key=lambda x: x[1])
+        if best_score / total_count > 0.7: # A timezone is dominant is its score is > 70% of the total
+            result = TimezoneResult(timezone=best_tz)
+            result.method_used = "cache_region"
+            return result
+
+        # Fallback: No dominant timezone
+        return TimezoneResult(timezone=None)

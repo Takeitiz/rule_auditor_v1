@@ -10,6 +10,7 @@ class TimezoneResult(BaseSuggestion):
     timezone: Optional[str] = Field(None, description="Suggested timezone name")
     delay_code: Optional[str] = Field(None, description="Delay code (T, B, b, C, c)")
     delay_value: Optional[int] = Field(None, description="Delay value in minutes")
+    confidence: Optional[int] = Field(None, description="Suggestion confidence")
 
     def __str__(self) -> str:
         delay_info = ""
